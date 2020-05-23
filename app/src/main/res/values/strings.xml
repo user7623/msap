@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">miniAssistant</string>
+    <string name="welcomeMsg">Welcome I am your personal virtual assistant, please select my duties.</string>
+    <string name="Start_btn">Start Service</string>
+</resources>
