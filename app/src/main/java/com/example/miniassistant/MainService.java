@@ -1,21 +1,38 @@
 package com.example.miniassistant;
 
 import android.annotation.TargetApi;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.util.Log;
 import android.widget.Toast;
+
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+
+import static com.example.miniassistant.App.CHANNEL_1_ID;
+import static com.example.miniassistant.App.CHANNEL_2_ID;
+
+//import static com.example.miniassistant.App.CHANNEL_ID;
 
 public class MainService extends Service {
     //pocetni vrednosti
+    private NotificationManagerCompat notificationManager;
+    boolean cancelNotification = false;
+    PendingIntent pendingIntent;
     int BatteryPercentage = 20;
-
+    String notificationTextString = "";
+    //Boolean notify = false;
     Boolean extra, wifi,connection,homework = false;
 
     public MainService() {
@@ -28,18 +45,20 @@ public class MainService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        notificationManager = NotificationManagerCompat.from(this);
 
-        Toast.makeText(this,"Main service started", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this,"Main service started", Toast.LENGTH_SHORT).show();
 
         SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
-
-        BatteryPercentage = preferences.getInt("batteryPercentage",15);
+        BatteryPercentage = PreferenceManager.getDefaultSharedPreferences(MainService.this).getInt("batteryPercentage", 20);
+       // BatteryPercentage = preferences.getInt("batteryPercentage",15);
         wifi = preferences.getBoolean("wifi", false);
         connection = preferences.getBoolean("connectivity",false);
         homework = preferences.getBoolean("homework", false);
         extra = preferences.getBoolean("extra", false);
         //proverka
         Toast.makeText(this,"Main service started, " + BatteryPercentage, Toast.LENGTH_SHORT).show();
+        Log.d("MAIN SERVICE: ", "Main service started, " + BatteryPercentage);
 
         if(BatteryPercentage < 16)
         {
@@ -57,6 +76,11 @@ public class MainService extends Service {
         {
             enableHomeworkService();
         }
+
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        pendingIntent = PendingIntent.getActivity(this,
+                0, notificationIntent, 0);
+
         return START_NOT_STICKY;
     }
 
@@ -78,47 +102,60 @@ public class MainService extends Service {
     private void updateBatteryData(Intent intent)
     {
         boolean present = intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT,false);
+        int batteryP = 0;
+        //resetiraj za da ne se povtoruva
+        notificationTextString = "";
         if(present && extra)
         {
-            StringBuilder stringBuilder = new StringBuilder();
             int health = intent.getIntExtra(BatteryManager.EXTRA_HEALTH, 0);
             int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
             int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-            stringBuilder.append("Battery health: " + health).append("\n");
+            notificationTextString = notificationTextString + "Battery health: " + health +"\n";
+
             if(level != -1 && scale != -1)
             {
-                int batteryP = (int)((level/(float)scale)*100f);
-                stringBuilder.append("Battery percentage: " + batteryP).append("\n");
+
+                batteryP = (int)((level/(float)scale)*100f);
+                if(batteryP > BatteryPercentage)
+                {
+                    //dokolku nema potreba od notifikacijata koga ke se povika App da ja ponisti
+                    cancelNotification = true;
+                    PreferenceManager.getDefaultSharedPreferences(MainService.this).edit().putBoolean("cancelForeground", cancelNotification).apply();
+                }
+                notificationTextString = notificationTextString + "Battery percentage: " + batteryP +"\n";
             }
             int temperature = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0);
             if(temperature > 0 )
             {
-                stringBuilder.append("Temperature :" + ((float)temperature/10f)).append("°C\n");
+                notificationTextString = notificationTextString + "Temperature :" + ((float)temperature/10f)+"°C\n";
             }
             int voltage = intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0);
             if(voltage > 0)
             {
-                stringBuilder.append("Voltage is: " + voltage + "mV").append("\n");
+                notificationTextString = notificationTextString + "Voltage is: " + voltage + "mV"+"\n";
             }
             long batterCapacity = getBatteryCapacity(this);
-            stringBuilder.append("Capacity :" + batterCapacity);
+            notificationTextString = notificationTextString + "Capacity :" + batterCapacity + "\n";
         }
         else if(present)
         {
-            StringBuilder stringBuilder = new StringBuilder();
             int health = intent.getIntExtra(BatteryManager.EXTRA_HEALTH, 0);
             int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
             int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-            stringBuilder.append("Battery health: " + health).append("\n");
+            notificationTextString = notificationTextString + "Battery health: " + health + "\n";
             if(level != -1 && scale != -1)
             {
-                int batteryP = (int)((level/(float)scale)*100f);
-                stringBuilder.append("Battery percentage: " + batteryP).append("\n");
+                batteryP = (int)((level/(float)scale)*100f);
+                notificationTextString = notificationTextString + "Battery percentage: " + batteryP + "\n";
             }
         }
         else
         {
             Toast.makeText(MainService.this, "No battery present", Toast.LENGTH_SHORT).show();
+        }
+        if(batteryP <= BatteryPercentage)
+        {
+            notifyUser();
         }
     }
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -135,6 +172,26 @@ public class MainService extends Service {
         }
 
         return 0;
+    }
+    private void notifyUser()
+    {
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_1_ID)
+                .setContentTitle("Battery notification")
+                .setContentText(notificationTextString)
+                .setSmallIcon(R.drawable.ic_battery_notification)
+                .setContentIntent(pendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_HIGH) //prioritet moze se do oreo-android 8 a target e 7
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setAutoCancel(true)
+                .setColor(Color.BLUE)
+                .setOnlyAlertOnce(true)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(notificationTextString))
+                .setOngoing(false)
+                .build();
+        notificationManager.notify(1, notification);
+        Log.i("Notification info: ", "starting notification on channel 1");
+
     }
     public void enableBroadcastReceivers()
     {

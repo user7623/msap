@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -120,17 +121,21 @@ public class MainActivity extends AppCompatActivity {
 
     public void startMainService()
     {
+        //PreferenceManager.getDefaultSharedPreferences(context).getString("MYLABEL", "defaultStringIfNothingFound");
         int bp = seekBar.getProgress();
+        Log.d("MAIN ACTIVITY: ", "battery percentage chosen is " + bp);
         //Log.d("Saved preferences are: " , selectedOptions + bp);
         SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         //editor.putString("selected",selectedOptions);
-        editor.putInt("batteryPercentage",bp);
+        //editor.putInt("batteryPercentage",bp);
+        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putInt("batteryPercentage", bp).apply();
         editor.putBoolean("extra",extra);
         editor.putBoolean("wifi",wifi);
         editor.putBoolean("connectivity",connectivity);
         editor.putBoolean("homework",homework);
-        Toast.makeText(this,"Saved preferences", Toast.LENGTH_SHORT).show();
+        editor.apply();
+        Toast.makeText(this,"Saved preferences" + bp, Toast.LENGTH_SHORT).show();
         Intent mainServiceIntent = new Intent(MainActivity.this, MainService.class);
         startService(mainServiceIntent);
         MainActivity.this.finish();
