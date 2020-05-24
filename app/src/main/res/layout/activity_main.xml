@@ -57,6 +57,15 @@
 
                 />
             <CheckBox
+                android:id="@+id/checkbox_extraInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="show additional info about battery "
+                android:textSize="20dp"
+                android:paddingBottom="30dp"
+                android:paddingTop="30dp"
+                />
+            <CheckBox
                 android:id="@+id/checkbox_wifi"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -84,7 +93,9 @@
                 android:paddingTop="30dp"
                 />
 
+
             <Button
+                android:id="@+id/start_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
