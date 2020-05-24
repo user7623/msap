@@ -129,12 +129,17 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = preferences.edit();
         //editor.putString("selected",selectedOptions);
         //editor.putInt("batteryPercentage",bp);
+        //so editor ima problemi i zatoa na zastaren nacin :\
         PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putInt("batteryPercentage", bp).apply();
-        editor.putBoolean("extra",extra);
+        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("extra", extra).apply();
+        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("wifi", wifi).apply();
+        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("connectivity", connectivity).apply();
+        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("homework", homework).apply();
+        /*editor.putBoolean("extra",extra);
         editor.putBoolean("wifi",wifi);
         editor.putBoolean("connectivity",connectivity);
         editor.putBoolean("homework",homework);
-        editor.apply();
+        editor.apply();*/
         Toast.makeText(this,"Saved preferences" + bp, Toast.LENGTH_SHORT).show();
         Intent mainServiceIntent = new Intent(MainActivity.this, MainService.class);
         startService(mainServiceIntent);

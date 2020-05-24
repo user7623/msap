@@ -10,6 +10,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.IBinder;
@@ -26,7 +29,12 @@ import static com.example.miniassistant.App.CHANNEL_2_ID;
 //import static com.example.miniassistant.App.CHANNEL_ID;
 
 public class MainService extends Service {
+    //TODO: popravi formula za kapacitet!
     //pocetni vrednosti
+    private int batteryP = 0;
+    private boolean batteryPStateChanged = false;
+    private boolean wifiSwitch;
+    private WifiManager wifiManager;
     private NotificationManagerCompat notificationManager;
     boolean cancelNotification = false;
     PendingIntent pendingIntent;
@@ -45,6 +53,8 @@ public class MainService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
         notificationManager = NotificationManagerCompat.from(this);
 
         //Toast.makeText(this,"Main service started", Toast.LENGTH_SHORT).show();
@@ -52,10 +62,16 @@ public class MainService extends Service {
         SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
         BatteryPercentage = PreferenceManager.getDefaultSharedPreferences(MainService.this).getInt("batteryPercentage", 20);
        // BatteryPercentage = preferences.getInt("batteryPercentage",15);
-        wifi = preferences.getBoolean("wifi", false);
-        connection = preferences.getBoolean("connectivity",false);
+        /*
+        ovie ne rabotat i zatoa so zastareni
+        * connection = preferences.getBoolean("connectivity",false);
         homework = preferences.getBoolean("homework", false);
         extra = preferences.getBoolean("extra", false);
+        */
+        wifi = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("wifi", false);
+        extra = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("extra", false);
+        connection = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("connectivity", false);
+        homework = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("homework", false);
         //proverka
         Toast.makeText(this,"Main service started, " + BatteryPercentage, Toast.LENGTH_SHORT).show();
         Log.d("MAIN SERVICE: ", "Main service started, " + BatteryPercentage);
@@ -102,7 +118,7 @@ public class MainService extends Service {
     private void updateBatteryData(Intent intent)
     {
         boolean present = intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT,false);
-        int batteryP = 0;
+
         //resetiraj za da ne se povtoruva
         notificationTextString = "";
         if(present && extra)
@@ -114,7 +130,7 @@ public class MainService extends Service {
 
             if(level != -1 && scale != -1)
             {
-
+                batteryPStateChanged = true;
                 batteryP = (int)((level/(float)scale)*100f);
                 if(batteryP > BatteryPercentage)
                 {
@@ -175,6 +191,7 @@ public class MainService extends Service {
     }
     private void notifyUser()
     {
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_1_ID)
                 .setContentTitle("Battery notification")
                 .setContentText(notificationTextString)
@@ -195,7 +212,47 @@ public class MainService extends Service {
     }
     public void enableBroadcastReceivers()
     {
-
+        //ako e smeneta sostojbata na promenlivata koja ja cuva vrednosta na polnezot(vo procenti)
+        //na baterijata i vrednosta e poniska od taa zadadena kako minimum pred izvestuvanje
+        //izgasi wifi
+        if(wifi && batteryPStateChanged && batteryP < BatteryPercentage)
+        {
+            //ova ke raboti samo do API28
+            //https://stackoverflow.com/questions/58006340/disable-wifi-on-android-29
+             wifiManager.setWifiEnabled(false);
+        }
+        if(connection)
+        {
+            boolean connected = false;
+            ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+            if(connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                    connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED)
+            {
+                connected = true;
+            }
+            else
+            {
+                connected = false;
+            }
+            if(!connected)
+            {
+                Log.d("MAINSERVICE: " , "Connection not detected!!!");
+                Notification notification = new NotificationCompat.Builder(this, CHANNEL_2_ID)
+                        .setContentTitle("Connection notification")
+                        .setContentText("No connection!")
+                        .setSmallIcon(R.drawable.ic_no_connection_icon)
+                        .setContentIntent(pendingIntent)
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT) //prioritet moze se do oreo-android 8 a target e 7
+                        .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                        .setAutoCancel(true)
+                        .setColor(Color.RED)
+                        .setOnlyAlertOnce(true)
+                        .setOngoing(false)
+                        .build();
+                notificationManager.notify(1, notification);
+                Log.i("Notification info: ", "starting notification on channel 1");
+            }
+        }
     }
     public void enableHomeworkService()
     {
