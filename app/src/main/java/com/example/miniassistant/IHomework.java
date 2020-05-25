@@ -7,6 +7,6 @@ import retrofit2.http.GET;
 
 public interface IHomework {
 //TODO: smeni url zavrsetok
-    @GET("getJobs/emulator")
+    @GET("/todos")
     Call<List<Homework>> getHomeworks();
 }

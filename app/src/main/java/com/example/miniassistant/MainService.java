@@ -250,7 +250,7 @@ public class MainService extends Service {
                         .setOngoing(false)
                         .build();
                 notificationManager.notify(2, notification);
-                Log.i("Notification info: ", "starting notification on channel 1");
+                Log.i("Notification info: ", "starting notification on channel 2");
             }
         }
     }
