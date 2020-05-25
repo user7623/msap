@@ -92,7 +92,34 @@
                 android:paddingBottom="30dp"
                 android:paddingTop="30dp"
                 />
-
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Change default URL here: "
+                android:textSize="15dp"
+                android:visibility="gone"
+                android:id="@+id/url_inform_text"
+                android:padding="10dp"
+                />
+            <EditText
+                android:id="@+id/url_edit_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="google.com"
+                android:visibility="gone"
+                android:textSize="15dp"
+                android:textColor="@android:color/holo_blue_dark"
+                android:padding="10dp"
+                />
+            <Switch
+                android:id="@+id/switch_url"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Check every hour"
+                android:textSize="15dp"
+                android:padding="10dp"
+                android:visibility="gone"
+                />
 
             <Button
                 android:id="@+id/start_button"

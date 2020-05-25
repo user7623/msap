@@ -8,10 +8,13 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,6 +24,10 @@ public class MainActivity extends AppCompatActivity {
     boolean extra, wifi, connectivity, homework = false;
     Button startButton;
     SeekBar seekBar;
+    TextView InformUrl;
+    EditText EditUrl;
+    Switch UrlSwitch;
+    boolean chechOften = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,6 +37,26 @@ public class MainActivity extends AppCompatActivity {
         CheckBox Connectivity = (CheckBox) findViewById(R.id.checkbox_connectivity);
         CheckBox Homework = (CheckBox) findViewById(R.id.checkbox_homework);
         CheckBox Extra = (CheckBox) findViewById(R.id.checkbox_extraInfo);
+
+        InformUrl = (TextView) findViewById(R.id.url_inform_text);
+        EditUrl = (EditText) findViewById(R.id.url_edit_text);
+        UrlSwitch = (Switch) findViewById(R.id.switch_url);
+
+        UrlSwitch.setOnDragListener(new View.OnDragListener() {
+            @Override
+            public boolean onDrag(View v, DragEvent event) {
+                if(chechOften)
+                {
+                    chechOften = false;
+                }
+                else
+                {
+                    chechOften = true;
+                }
+                return false;
+            }
+        });
+
         //TODO: probaj da poednostavis so prevzemanje na vrednostite od Checkbox
 
         Extra.setOnClickListener(new View.OnClickListener() {
@@ -77,10 +104,17 @@ public class MainActivity extends AppCompatActivity {
                 if(!homework)
                 {
                     homework = true;
+                    InformUrl.setVisibility(View.VISIBLE);
+                    EditUrl.setVisibility(View.VISIBLE);
+                    UrlSwitch.setVisibility(View.VISIBLE);
                 }
                 else
                 {
                     homework = false;
+
+                    InformUrl.setVisibility(View.GONE);
+                    EditUrl.setVisibility(View.GONE);
+                    UrlSwitch.setVisibility(View.GONE);
                 }
             }
         });
@@ -135,6 +169,14 @@ public class MainActivity extends AppCompatActivity {
         PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("wifi", wifi).apply();
         PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("connectivity", connectivity).apply();
         PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("homework", homework).apply();
+        if(!EditUrl.getText().toString().equals(""))
+        {
+            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putString("url", EditUrl.getText().toString()).apply();
+        }
+        if(chechOften)
+        {
+            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("checkOften", chechOften).apply();
+        }
         /*editor.putBoolean("extra",extra);
         editor.putBoolean("wifi",wifi);
         editor.putBoolean("connectivity",connectivity);

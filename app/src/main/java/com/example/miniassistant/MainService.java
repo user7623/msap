@@ -256,7 +256,8 @@ public class MainService extends Service {
     }
     public void enableHomeworkService()
     {
-
+        Intent homework = new Intent(MainService.this, HomeworkService.class);
+        startService(homework);
     }
     @Override
     public IBinder onBind(Intent intent) {
