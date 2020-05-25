@@ -200,7 +200,7 @@ public class MainService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_HIGH) //prioritet moze se do oreo-android 8 a target e 7
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setAutoCancel(true)
-                .setColor(Color.BLUE)
+                .setColor(Color.GREEN)
                 .setOnlyAlertOnce(true)
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText(notificationTextString))
@@ -236,7 +236,7 @@ public class MainService extends Service {
             }
             if(!connected)
             {
-                Log.d("MAINSERVICE: " , "Connection not detected!!!");
+                Log.d("MAIN SERVICE: " , "Connection not detected!!!");
                 Notification notification = new NotificationCompat.Builder(this, CHANNEL_2_ID)
                         .setContentTitle("Connection notification")
                         .setContentText("No connection!")
@@ -245,11 +245,11 @@ public class MainService extends Service {
                         .setPriority(NotificationCompat.PRIORITY_DEFAULT) //prioritet moze se do oreo-android 8 a target e 7
                         .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                         .setAutoCancel(true)
-                        .setColor(Color.RED)
+                        .setColor(Color.BLACK)
                         .setOnlyAlertOnce(true)
                         .setOngoing(false)
                         .build();
-                notificationManager.notify(1, notification);
+                notificationManager.notify(2, notification);
                 Log.i("Notification info: ", "starting notification on channel 1");
             }
         }

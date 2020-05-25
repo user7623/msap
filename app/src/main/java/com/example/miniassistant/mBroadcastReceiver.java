@@ -15,7 +15,7 @@ public class mBroadcastReceiver extends BroadcastReceiver {
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(i);
         }
-        if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
+        if (Intent.ACTION_BATTERY_CHANGED.equals(intent.getAction())) {
             Log.d(TAG,"it worked!");
             Intent i = new Intent(context, MainActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
