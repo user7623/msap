@@ -1,12 +1,14 @@
 package com.example.miniassistant;
 
 import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -25,6 +27,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import static com.example.miniassistant.App.CHANNEL_2_ID;
+import static com.example.miniassistant.App.CHANNEL_3_ID;
 
 public class HomeworkService extends Service {
 //pomosno promenlivi za domasni
@@ -101,7 +104,7 @@ public class HomeworkService extends Service {
         stoptimertask();
         timer = new Timer();
         initializeTimerTask();
-        //TODO: smeni na 3600000 i 86400000
+        //TODO: 3600000 i 86400000 ms
         if(checkOften) {
             timer.schedule(timerTask, 1000, 3600); //sekoj cas
         }
@@ -193,19 +196,32 @@ public class HomeworkService extends Service {
     }
 
     private void informUser() {
-        Notification notification = new NotificationCompat.Builder(HomeworkService.this, CHANNEL_2_ID)
+
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        //startActivity(browserIntent);
+
+        PendingIntent actionIntent = PendingIntent.getActivity(this,0,browserIntent,0);
+
+
+
+        Notification notification = new NotificationCompat.Builder(HomeworkService.this, CHANNEL_3_ID)
                 .setContentTitle("Unfinished homework's!")
                 .setContentText("Homework title :\n" + title)
                 .setSmallIcon(R.drawable.ic_book)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT) //prioritet moze se do oreo-android 8 a target e 7
+                .setPriority(NotificationCompat.PRIORITY_HIGH) //prioritet moze se do oreo-android 8 a target e 7
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setAutoCancel(true)
                 .setColor(Color.WHITE)
                 .setOnlyAlertOnce(true)
                 .setOngoing(false)
+                .addAction(R.drawable.ic_open_school_site_icon, "Go to site", actionIntent)
+
                 .build();
-        notificationManager.notify(2, notification);
-        Log.i("Notification info: ", "starting homework notification on channel 2");
+        notificationManager.notify(3, notification);
+        Log.i("Notification info: ", "starting homework notification on channel 3");
+        //vrati gi pocetnite vrednosti
+        title = "";
+        completed = false;
     }
 
     @Override
