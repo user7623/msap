@@ -187,4 +187,5 @@ public class MainActivity extends AppCompatActivity {
         startService(mainServiceIntent);
         MainActivity.this.finish();
     }
+
 }
