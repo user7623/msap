@@ -2,4 +2,13 @@
     <string name="app_name">miniAssistant</string>
     <string name="welcomeMsg">Welcome I am your personal virtual assistant, please select my duties.</string>
     <string name="Start_btn">Start Service</string>
+    <string name="Battery_p_txt">Inform me when battery charge(%) drops down to:</string>
+    <string name="Extra_info">show additional info about battery </string>
+    <string name="checkbox_wifi">check Wifi (disable if battery is low)</string>
+    <string name="checkbox_connectivity">check Connectivity state (alert if none)</string>
+    <string name="checkbox_homework">check for homework</string>
+    <string name="url_inform_text">Change default URL here: </string>
+    <string name="url_edit_text">google.com</string>
+    <string name="switch_url">Check every hour</string>
+    <string name="toggle_button">МК</string>
 </resources>
