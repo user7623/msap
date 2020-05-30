@@ -27,11 +27,19 @@ public class MainActivity extends AppCompatActivity {
     TextView InformUrl;
     EditText EditUrl;
     Switch UrlSwitch;
+    boolean boot = false;
     boolean chechOften = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
+        boot = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("boot", false);
+        if(boot)
+        {
+            startMainService();
+        }
 
         CheckBox Wifi = (CheckBox) findViewById(R.id.checkbox_wifi);
         CheckBox Connectivity = (CheckBox) findViewById(R.id.checkbox_connectivity);
@@ -155,37 +163,46 @@ public class MainActivity extends AppCompatActivity {
 
     public void startMainService()
     {
-        //PreferenceManager.getDefaultSharedPreferences(context).getString("MYLABEL", "defaultStringIfNothingFound");
-        int bp = seekBar.getProgress();
-        Log.d("MAIN ACTIVITY: ", "battery percentage chosen is " + bp);
-        //Log.d("Saved preferences are: " , selectedOptions + bp);
-        SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        //editor.putString("selected",selectedOptions);
-        //editor.putInt("batteryPercentage",bp);
-        //so editor ima problemi i zatoa na zastaren nacin :\
-        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putInt("batteryPercentage", bp).apply();
-        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("extra", extra).apply();
-        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("wifi", wifi).apply();
-        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("connectivity", connectivity).apply();
-        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("homework", homework).apply();
-        if(!EditUrl.getText().toString().equals(""))
+        if(boot)
         {
-            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putString("url", EditUrl.getText().toString()).apply();
+            Log.d("MainActivity ", "Starting main service after boot");
+            Intent mainServiceIntent = new Intent(MainActivity.this, MainService.class);
+            startService(mainServiceIntent);
+            PreferenceManager.getDefaultSharedPreferences(this).edit().putBoolean("boot", false).apply();
+            MainActivity.this.finish();
         }
-        if(chechOften)
-        {
-            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("checkOften", chechOften).apply();
-        }
-        /*editor.putBoolean("extra",extra);
-        editor.putBoolean("wifi",wifi);
-        editor.putBoolean("connectivity",connectivity);
-        editor.putBoolean("homework",homework);
-        editor.apply();*/
-        Toast.makeText(this,"Saved preferences" + bp, Toast.LENGTH_SHORT).show();
-        Intent mainServiceIntent = new Intent(MainActivity.this, MainService.class);
-        startService(mainServiceIntent);
-        MainActivity.this.finish();
+        else {
+            //PreferenceManager.getDefaultSharedPreferences(context).getString("MYLABEL", "defaultStringIfNothingFound");
+            int bp = seekBar.getProgress();
+            Log.d("MAIN ACTIVITY: ", "battery percentage chosen is " + bp);
+            //Log.d("Saved preferences are: " , selectedOptions + bp);
+            SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            //editor.putString("selected",selectedOptions);
+            //editor.putInt("batteryPercentage",bp);
+            //so editor ima problemi i zatoa na zastaren nacin :\
+            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putInt("batteryPercentage", bp).apply();
+            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("extra", extra).apply();
+            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("wifi", wifi).apply();
+            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("connectivity", connectivity).apply();
+            PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("homework", homework).apply();
+            if(!EditUrl.getText().toString().equals(""))
+            {
+                PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putString("url", EditUrl.getText().toString()).apply();
+            }
+            if(chechOften)
+            {
+                PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("checkOften", chechOften).apply();
+            }
+            /*editor.putBoolean("extra",extra);
+            editor.putBoolean("wifi",wifi);
+            editor.putBoolean("connectivity",connectivity);
+            editor.putBoolean("homework",homework);
+            editor.apply();*/
+            Toast.makeText(this,"Saved preferences" + bp, Toast.LENGTH_SHORT).show();
+            Intent mainServiceIntent = new Intent(MainActivity.this, MainService.class);
+            startService(mainServiceIntent);
+            MainActivity.this.finish();
+            }
     }
-
 }
