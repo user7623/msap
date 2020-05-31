@@ -32,7 +32,6 @@ public class mBroadcastReceiver extends BroadcastReceiver {
             context.startActivity(i);
             Log.d(TAG,"Main activity started!");
         }
-
         if (Intent.ACTION_POWER_DISCONNECTED.equals(intent.getAction())) {
             Log.d(TAG,"power disconnected!");
             Intent i = new Intent(context, MainActivity.class);

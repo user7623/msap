@@ -202,13 +202,11 @@ public class HomeworkService extends Service {
 
         PendingIntent actionIntent = PendingIntent.getActivity(this,0,browserIntent,0);
 
-
-
         Notification notification = new NotificationCompat.Builder(HomeworkService.this, CHANNEL_3_ID)
                 .setContentTitle("Unfinished homework's!")
                 .setContentText("Homework title :\n" + title)
                 .setSmallIcon(R.drawable.ic_book)
-                .setPriority(NotificationCompat.PRIORITY_HIGH) //prioritet moze se do oreo-android 8 a target e 7
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setAutoCancel(true)
                 .setColor(Color.WHITE)

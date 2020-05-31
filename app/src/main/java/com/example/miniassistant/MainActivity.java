@@ -18,6 +18,8 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 public class MainActivity extends AppCompatActivity {
 
     TextView tvProgressLabel;
@@ -29,6 +31,8 @@ public class MainActivity extends AppCompatActivity {
     Switch UrlSwitch;
     boolean boot = false;
     boolean chechOften = false;
+    FloatingActionButton fab;
+    boolean fabSelected = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,6 +40,14 @@ public class MainActivity extends AppCompatActivity {
 
         SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
         boot = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("boot", false);
+        fab = (FloatingActionButton) findViewById(R.id.floating_a_button);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cFunction();
+            }
+        });
+
         if(boot)
         {
             startMainService();
@@ -194,6 +206,7 @@ public class MainActivity extends AppCompatActivity {
             {
                 PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("checkOften", chechOften).apply();
             }
+
             /*editor.putBoolean("extra",extra);
             editor.putBoolean("wifi",wifi);
             editor.putBoolean("connectivity",connectivity);
@@ -204,5 +217,18 @@ public class MainActivity extends AppCompatActivity {
             startService(mainServiceIntent);
             MainActivity.this.finish();
             }
+    }
+    private void cFunction()
+    {
+        //ponisti gi site prethodni selekcii i iskluci gi servisite
+        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putInt("batteryPercentage", 15).apply();
+        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("extra", false).apply();
+        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("wifi", false).apply();
+        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("connectivity", false).apply();
+        PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("homework", false).apply();
+        Intent mainServiceIntent = new Intent(MainActivity.this, MainService.class);
+        startService(mainServiceIntent);
+
+        MainActivity.this.finish();
     }
 }

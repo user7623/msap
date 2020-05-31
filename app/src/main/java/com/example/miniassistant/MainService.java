@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -23,6 +24,10 @@ import android.widget.Toast;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import java.net.URL;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import static com.example.miniassistant.App.CHANNEL_1_ID;
 import static com.example.miniassistant.App.CHANNEL_2_ID;
 
@@ -32,7 +37,6 @@ public class MainService extends Service {
     //TODO: popravi formula za kapacitet!
     //pocetni vrednosti
     private int batteryP = 0;
-    private boolean batteryPStateChanged = false;
     private boolean wifiSwitch;
     private WifiManager wifiManager;
     private NotificationManagerCompat notificationManager;
@@ -40,9 +44,9 @@ public class MainService extends Service {
     PendingIntent pendingIntent;
     int BatteryPercentage = 20;
     String notificationTextString = "";
-    //Boolean notify = false;
     Boolean extra, wifi,connection,homework = false;
-
+    boolean notified = false;
+    boolean registeredR = false;
     public MainService() {
     }
 
@@ -53,8 +57,6 @@ public class MainService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
@@ -79,6 +81,14 @@ public class MainService extends Service {
         Toast.makeText(this,"Main service started, " + BatteryPercentage, Toast.LENGTH_SHORT).show();
         Log.d("MAIN SERVICE: ", "Main service started, " + BatteryPercentage);
 
+        if(!wifi && !extra && !connection &&! homework && BatteryPercentage == 15)
+        {
+            if(registeredR){unregisterReceiver(batteryInfoReceiver);}
+            Intent stopIntent = new Intent(MainService.this, HomeworkService.class);
+            stopService(stopIntent);
+            stopSelf();
+        }
+
         if(BatteryPercentage < 16)
         {
             Toast.makeText(this,"Default device notification already enabled", Toast.LENGTH_SHORT).show();
@@ -95,6 +105,11 @@ public class MainService extends Service {
         {
             enableHomeworkService();
         }
+        else
+        {
+            Intent stopIntent = new Intent(MainService.this, HomeworkService.class);
+            stopService(stopIntent);
+        }
 
         Intent notificationIntent = new Intent(this, MainActivity.class);
         pendingIntent = PendingIntent.getActivity(this,
@@ -105,12 +120,14 @@ public class MainService extends Service {
 
     public void enableBatteryMonitoring()
     {
+
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Intent.ACTION_POWER_CONNECTED);
         intentFilter.addAction(Intent.ACTION_POWER_DISCONNECTED);
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
 
         registerReceiver(batteryInfoReceiver, intentFilter);
+        registeredR = true;
     }
     private BroadcastReceiver batteryInfoReceiver = new BroadcastReceiver() {
         @Override
@@ -133,7 +150,6 @@ public class MainService extends Service {
 
             if(level != -1 && scale != -1)
             {
-                batteryPStateChanged = true;
                 batteryP = (int)((level/(float)scale)*100f);
                 if(batteryP > BatteryPercentage)
                 {
@@ -194,31 +210,35 @@ public class MainService extends Service {
     }
     private void notifyUser()
     {
+        if(!notified) {
+            Notification notification = new NotificationCompat.Builder(this, CHANNEL_1_ID)
+                    .setContentTitle("Battery notification")
+                    .setContentText(notificationTextString)
+                    .setSmallIcon(R.drawable.ic_battery_notification)
+                    .setContentIntent(pendingIntent)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH) //prioritet moze se do oreo-android 8 a target e 7
+                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                    .setAutoCancel(true)
+                    .setColor(Color.GREEN)
+                    .setOnlyAlertOnce(true)
+                    .setStyle(new NotificationCompat.BigTextStyle()
+                            .bigText(notificationTextString))
+                    .setOngoing(false)
+                    .setVibrate(new long[]{1000, 1000, 1000, 1000, 1000})
+                    .setLights(Color.RED, 3000, 3000)
 
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_1_ID)
-                .setContentTitle("Battery notification")
-                .setContentText(notificationTextString)
-                .setSmallIcon(R.drawable.ic_battery_notification)
-                .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_HIGH) //prioritet moze se do oreo-android 8 a target e 7
-                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                .setAutoCancel(true)
-                .setColor(Color.GREEN)
-                .setOnlyAlertOnce(true)
-                .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText(notificationTextString))
-                .setOngoing(false)
-                .build();
-        notificationManager.notify(1, notification);
-        Log.i("Notification info: ", "starting notification on channel 1");
-
+                    .build();
+            notificationManager.notify(1, notification);
+            Log.i("Notification info: ", "starting notification on channel 1");
+            notified = true;
+        }
     }
     public void enableBroadcastReceivers()
     {
         //ako e smeneta sostojbata na promenlivata koja ja cuva vrednosta na polnezot(vo procenti)
         //na baterijata i vrednosta e poniska od taa zadadena kako minimum pred izvestuvanje
         //izgasi wifi
-        if(wifi && batteryPStateChanged && batteryP < BatteryPercentage)
+        if(wifi && batteryP < BatteryPercentage)
         {
             //ova ke raboti samo do API28
             //https://stackoverflow.com/questions/58006340/disable-wifi-on-android-29
@@ -266,5 +286,33 @@ public class MainService extends Service {
     public IBinder onBind(Intent intent) {
         // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
+    }
+    private static Timer timer;
+    private static TimerTask timerTask;
+    long oldTime = 0;
+
+    public void startTimer() {
+        stoptimertask();
+        timer = new Timer();
+        initializeTimerTask();
+
+        timer.schedule(timerTask, 1000, 1800000); //30min
+    }
+
+    public void initializeTimerTask() {
+        timerTask = new TimerTask() {
+            public void run() {
+                //pokazuvaj notifikacija na sekoi 30min i proveruvaj za wifi i net
+                notified = false;
+                enableBroadcastReceivers();
+            }
+        };
+    }
+
+    public void stoptimertask() {
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
     }
 }
