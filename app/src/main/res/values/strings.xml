@@ -10,5 +10,5 @@
     <string name="url_inform_text">Change default URL here: </string>
     <string name="url_edit_text">google.com</string>
     <string name="switch_url">Check every hour</string>
-    <string name="toggle_button">МК</string>
+    <string name="toggle_button"></string>
 </resources>
