@@ -3,6 +3,7 @@ package com.example.miniassistant;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -21,7 +22,6 @@ import android.widget.Toast;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 public class MainActivity extends AppCompatActivity {
-
     TextView tvProgressLabel;
     boolean extra, wifi, connectivity, homework = false;
     Button startButton;
@@ -32,13 +32,10 @@ public class MainActivity extends AppCompatActivity {
     boolean boot = false;
     boolean chechOften = false;
     FloatingActionButton fab;
-    boolean fabSelected = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
         boot = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("boot", false);
         fab = (FloatingActionButton) findViewById(R.id.floating_a_button);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -62,9 +59,9 @@ public class MainActivity extends AppCompatActivity {
         EditUrl = (EditText) findViewById(R.id.url_edit_text);
         UrlSwitch = (Switch) findViewById(R.id.switch_url);
 
-        UrlSwitch.setOnDragListener(new View.OnDragListener() {
+        UrlSwitch.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onDrag(View v, DragEvent event) {
+            public void onClick(View v) {
                 if(chechOften)
                 {
                     chechOften = false;
@@ -73,12 +70,8 @@ public class MainActivity extends AppCompatActivity {
                 {
                     chechOften = true;
                 }
-                return false;
             }
         });
-
-        //TODO: probaj da poednostavis so prevzemanje na vrednostite od Checkbox
-
         Extra.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -147,29 +140,25 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // set a change listener on the SeekBar
         seekBar = findViewById(R.id.seekBar);
         seekBar.setOnSeekBarChangeListener(seekBarChangeListener);
 
         int progress = seekBar.getProgress();
         tvProgressLabel = findViewById(R.id.textView);
         tvProgressLabel.setText("Charge drops to: " + progress + "%");
-    }
 
+    }
     SeekBar.OnSeekBarChangeListener seekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
 
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            // updated continuously as the user slides the thumb
             tvProgressLabel.setText("Charge drops to: " + progress + "%");
         }
         @Override
         public void onStartTrackingTouch(SeekBar seekBar) {
-            // called when the user first touches the SeekBar
         }
         @Override
         public void onStopTrackingTouch(SeekBar seekBar) {
-            // called after the user finishes moving the SeekBar
         }
     };
 
@@ -184,10 +173,8 @@ public class MainActivity extends AppCompatActivity {
             MainActivity.this.finish();
         }
         else {
-            //PreferenceManager.getDefaultSharedPreferences(context).getString("MYLABEL", "defaultStringIfNothingFound");
             int bp = seekBar.getProgress();
             Log.d("MAIN ACTIVITY: ", "battery percentage chosen is " + bp);
-            //Log.d("Saved preferences are: " , selectedOptions + bp);
             SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
             SharedPreferences.Editor editor = preferences.edit();
             //editor.putString("selected",selectedOptions);
@@ -204,14 +191,9 @@ public class MainActivity extends AppCompatActivity {
             }
             if(chechOften)
             {
+                Log.e("MAINACTIVITY" , "checkOften is" + chechOften);
                 PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("checkOften", chechOften).apply();
             }
-
-            /*editor.putBoolean("extra",extra);
-            editor.putBoolean("wifi",wifi);
-            editor.putBoolean("connectivity",connectivity);
-            editor.putBoolean("homework",homework);
-            editor.apply();*/
             Toast.makeText(this,"Saved preferences" + bp, Toast.LENGTH_SHORT).show();
             Intent mainServiceIntent = new Intent(MainActivity.this, MainService.class);
             startService(mainServiceIntent);

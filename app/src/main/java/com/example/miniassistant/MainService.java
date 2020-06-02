@@ -31,13 +31,10 @@ import java.util.TimerTask;
 import static com.example.miniassistant.App.CHANNEL_1_ID;
 import static com.example.miniassistant.App.CHANNEL_2_ID;
 
-//import static com.example.miniassistant.App.CHANNEL_ID;
-
 public class MainService extends Service {
     //TODO: popravi formula za kapacitet!
     //pocetni vrednosti
     private int batteryP = 0;
-    private boolean wifiSwitch;
     private WifiManager wifiManager;
     private NotificationManagerCompat notificationManager;
     boolean cancelNotification = false;
@@ -47,9 +44,10 @@ public class MainService extends Service {
     Boolean extra, wifi,connection,homework = false;
     boolean notified = false;
     boolean registeredR = false;
+    boolean powerDisconnected, timeChanged = false;
+    int counter = 0;
     public MainService() {
     }
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -59,36 +57,39 @@ public class MainService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
         notificationManager = NotificationManagerCompat.from(this);
-
-        //Toast.makeText(this,"Main service started", Toast.LENGTH_SHORT).show();
-
         SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", MODE_PRIVATE);
         BatteryPercentage = PreferenceManager.getDefaultSharedPreferences(MainService.this).getInt("batteryPercentage", 20);
-       // BatteryPercentage = preferences.getInt("batteryPercentage",15);
-        /*
-        ovie ne rabotat i zatoa so zastareni
-        * connection = preferences.getBoolean("connectivity",false);
-        homework = preferences.getBoolean("homework", false);
-        extra = preferences.getBoolean("extra", false);
-        */
         wifi = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("wifi", false);
         extra = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("extra", false);
         connection = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("connectivity", false);
         homework = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("homework", false);
-        //proverka
-        Toast.makeText(this,"Main service started, " + BatteryPercentage, Toast.LENGTH_SHORT).show();
-        Log.d("MAIN SERVICE: ", "Main service started, " + BatteryPercentage);
+        powerDisconnected = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("powerDisconnected", false);
+        timeChanged = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("timeChanged", false);
 
-        if(!wifi && !extra && !connection &&! homework && BatteryPercentage == 15)
+        //proverka
+        Log.d("MAIN SERVICE: ", "Main service started, " + BatteryPercentage);
+        if(PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("timeChanged", false))
+        {
+            enableBroadcastReceivers();
+            return START_NOT_STICKY;
+        }
+        if(!wifi && !extra && !connection && !homework && BatteryPercentage == 15)
         {
             if(registeredR){unregisterReceiver(batteryInfoReceiver);}
+            //ne go prekinuva homeworks servisot zasto?
             Intent stopIntent = new Intent(MainService.this, HomeworkService.class);
             stopService(stopIntent);
             stopSelf();
+            Log.d("MAIN SERVICE", "Services stopped!");
+            return START_NOT_STICKY;
         }
-
+        if(powerDisconnected && BatteryPercentage < 16)
+        {
+            enableBatteryMonitoring();
+            PreferenceManager.getDefaultSharedPreferences(MainService.this).edit().putBoolean("powerDisconnected", false).apply();
+            return START_NOT_STICKY;
+        }
         if(BatteryPercentage < 16)
         {
             Toast.makeText(this,"Default device notification already enabled", Toast.LENGTH_SHORT).show();
@@ -96,6 +97,17 @@ public class MainService extends Service {
         else
         {
             enableBatteryMonitoring();
+        }
+        if(powerDisconnected)
+        {
+            enableBatteryMonitoring();
+            return START_NOT_STICKY;
+        }
+        if(timeChanged)
+        {
+            rFunk();
+            PreferenceManager.getDefaultSharedPreferences(MainService.this).edit().putBoolean("timeChanged", false).apply();
+            return START_NOT_STICKY;
         }
         if(wifi || connection)
         {
@@ -110,17 +122,14 @@ public class MainService extends Service {
             Intent stopIntent = new Intent(MainService.this, HomeworkService.class);
             stopService(stopIntent);
         }
-
         Intent notificationIntent = new Intent(this, MainActivity.class);
         pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, 0);
-
+        startTimer();
         return START_NOT_STICKY;
     }
-
     public void enableBatteryMonitoring()
     {
-
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Intent.ACTION_POWER_CONNECTED);
         intentFilter.addAction(Intent.ACTION_POWER_DISCONNECTED);
@@ -205,12 +214,11 @@ public class MainService extends Service {
                 return value;
             }
         }
-
         return 0;
     }
     private void notifyUser()
     {
-        if(!notified) {
+        if(!notified || powerDisconnected) {
             Notification notification = new NotificationCompat.Builder(this, CHANNEL_1_ID)
                     .setContentTitle("Battery notification")
                     .setContentText(notificationTextString)
@@ -224,8 +232,8 @@ public class MainService extends Service {
                     .setStyle(new NotificationCompat.BigTextStyle()
                             .bigText(notificationTextString))
                     .setOngoing(false)
-                    .setVibrate(new long[]{1000, 1000, 1000, 1000, 1000})
-                    .setLights(Color.RED, 3000, 3000)
+                    .setVibrate(new long[]{250, 250, 250, 250, 250})
+                    .setLights(Color.GREEN, 1000, 1000)
 
                     .build();
             notificationManager.notify(1, notification);
@@ -270,6 +278,7 @@ public class MainService extends Service {
                         .setAutoCancel(true)
                         .setColor(Color.BLACK)
                         .setOnlyAlertOnce(true)
+                        .setVibrate(new long[]{750,750})
                         .setOngoing(false)
                         .build();
                 notificationManager.notify(2, notification);
@@ -279,6 +288,7 @@ public class MainService extends Service {
     }
     public void enableHomeworkService()
     {
+        Log.d("MAIN SERVICE", "Homework service enabled");
         Intent homework = new Intent(MainService.this, HomeworkService.class);
         startService(homework);
     }
@@ -290,29 +300,46 @@ public class MainService extends Service {
     private static Timer timer;
     private static TimerTask timerTask;
     long oldTime = 0;
-
     public void startTimer() {
         stoptimertask();
         timer = new Timer();
         initializeTimerTask();
-
-        timer.schedule(timerTask, 1000, 1800000); //30min
+        //TODO: 1800000 za 30min
+        timer.schedule(timerTask, 1000, 3000); //
     }
-
     public void initializeTimerTask() {
+        Log.e("TIMER", "TIMER");
         timerTask = new TimerTask() {
             public void run() {
-                //pokazuvaj notifikacija na sekoi 30min i proveruvaj za wifi i net
-                notified = false;
-                enableBroadcastReceivers();
+                rFunk();
+                //enableBroadcastReceivers();
             }
         };
     }
-
     public void stoptimertask() {
         if (timer != null) {
             timer.cancel();
             timer = null;
         }
+    }
+    private void rFunk()
+    {
+        wifi = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("wifi", false);
+        connection = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("connectivity", false);
+        homework = PreferenceManager.getDefaultSharedPreferences(MainService.this).getBoolean("homework", false);
+        if(wifi || connection)
+        {
+            enableBroadcastReceivers();
+        }
+        if(counter == 450)//30min - na sekoi 4sec se inkrementira
+        {
+            //pokazuvaj notifikacija na sekoi 30min i proveruvaj za wifi i net
+            notified = false;
+            enableHomeworkService();
+            enableBatteryMonitoring();
+            counter = 0;//resetiraj
+        }
+        counter++;
+        startTimer();
     }
 }
