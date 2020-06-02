@@ -39,7 +39,6 @@ public class mBroadcastReceiver extends BroadcastReceiver {
             Log.d(TAG,"time changed!");
             PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("timeChanged", true).apply();
             Intent i = new Intent(context, MainService.class);
-            //i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startService(i);
             Log.d(TAG,"Main service started!");
             Toast.makeText(context, "Broadcaster received msg", Toast.LENGTH_SHORT).show();

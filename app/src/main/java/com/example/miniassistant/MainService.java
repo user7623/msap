@@ -12,7 +12,6 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -20,20 +19,15 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
-
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
-
-import java.net.URL;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import static com.example.miniassistant.App.CHANNEL_1_ID;
 import static com.example.miniassistant.App.CHANNEL_2_ID;
 
 public class MainService extends Service {
-    //TODO: popravi formula za kapacitet!
-    //pocetni vrednosti
+
     private int batteryP = 0;
     private WifiManager wifiManager;
     private NotificationManagerCompat notificationManager;
@@ -46,6 +40,8 @@ public class MainService extends Service {
     boolean registeredR = false;
     boolean powerDisconnected, timeChanged = false;
     int counter = 0;
+    private static Timer timer;
+    private static TimerTask timerTask;
     public MainService() {
     }
     @Override
@@ -77,7 +73,6 @@ public class MainService extends Service {
         if(!wifi && !extra && !connection && !homework && BatteryPercentage == 15)
         {
             if(registeredR){unregisterReceiver(batteryInfoReceiver);}
-            //ne go prekinuva homeworks servisot zasto?
             Intent stopIntent = new Intent(MainService.this, HomeworkService.class);
             stopService(stopIntent);
             stopSelf();
@@ -195,6 +190,9 @@ public class MainService extends Service {
         }
         else
         {
+            //pri isklucuvanje na napojuvanjeto moze pogresno za detektira deka nema baterija
+            //zatoa if uslov za proverka
+            if(powerDisconnected)
             Toast.makeText(MainService.this, "No battery present", Toast.LENGTH_SHORT).show();
         }
         if(batteryP <= BatteryPercentage)
@@ -297,9 +295,7 @@ public class MainService extends Service {
         // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
-    private static Timer timer;
-    private static TimerTask timerTask;
-    long oldTime = 0;
+
     public void startTimer() {
         stoptimertask();
         timer = new Timer();
@@ -331,7 +327,7 @@ public class MainService extends Service {
         {
             enableBroadcastReceivers();
         }
-        if(counter == 450)//30min - na sekoi 4sec se inkrementira
+        if(counter % 4500 == 0)//30min - na sekoi 4sec se inkrementira
         {
             //pokazuvaj notifikacija na sekoi 30min i proveruvaj za wifi i net
             notified = false;
